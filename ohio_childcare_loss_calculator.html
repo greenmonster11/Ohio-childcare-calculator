@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ohio Childcare Hour Bucket Loss Calculator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #78909c;
+            margin-bottom: 32px;
+            font-size: 0.9rem;
+        }
+        .card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .card h2 {
+            color: #4fc3f7;
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card h2 .step {
+            background: #4fc3f7;
+            color: #1a1a2e;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        label { font-size: 0.85rem; color: #90a4ae; }
+        select {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        select:focus { outline: none; border-color: #4fc3f7; }
+        .dropzone {
+            border: 2px dashed rgba(79, 195, 247, 0.4);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .dropzone:hover, .dropzone.dragover {
+            border-color: #4fc3f7;
+            background: rgba(79, 195, 247, 0.1);
+        }
+        .dropzone-icon { margin-bottom: 16px; }
+        .dropzone-text { color: #90a4ae; }
+        .dropzone-text strong { color: #4fc3f7; }
+        #fileInput { display: none; }
+        .results-hidden { display: none; }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px 16px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+        .stat-value.loss { color: #ef5350; }
+        .stat-value.warning { color: #ffa726; }
+        .stat-label { font-size: 0.8rem; color: #90a4ae; margin-top: 4px; }
+        .breakdown-section {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .breakdown-section h3 {
+            color: #90a4ae;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th, td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        th {
+            background: rgba(0,0,0,0.3);
+            color: #4fc3f7;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        tr:hover { background: rgba(255,255,255,0.05); }
+        .loss-cell { color: #ef5350; font-weight: 600; }
+        .bucket-change {
+            background: rgba(239, 83, 80, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+        .no-change { color: #66bb6a; }
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .explanation-box {
+            background: rgba(79, 195, 247, 0.1);
+            border-left: 4px solid #4fc3f7;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
+        }
+        .explanation-box h4 { color: #4fc3f7; margin-bottom: 8px; }
+        .explanation-box p { font-size: 0.9rem; line-height: 1.5; }
+        .privacy-note {
+            text-align: center;
+            padding: 14px 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #78909c;
+            margin-top: 24px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .privacy-note strong { color: #90a4ae; }
+        .btn {
+            background: #4fc3f7;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #81d4fa; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 195, 247, 0.3); }
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #b0bec5;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.25); }
+        .actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .age-group-tag {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(129, 199, 132, 0.2);
+            color: #81c784;
+        }
+        .unmatched-tag {
+            background: rgba(255, 167, 38, 0.2);
+            color: #ffa726;
+        }
+        .period-dates { color: #90a4ae; font-size: 0.8rem; }
+        .settings-display {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        .setting-item { font-size: 0.85rem; }
+        .setting-item strong { color: #4fc3f7; }
+        .week-summary {
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #90a4ae;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(79, 195, 247, 0.3);
+            border-top-color: #4fc3f7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ohio Childcare Loss Calculator</h1>
+        <p class="subtitle">Calculate provider losses from November 2025 hour bucket changes (HB 96)</p>
+
+        <div class="card">
+            <h2><span class="step">1</span> Your Center Settings</h2>
+            <div class="settings-grid">
+                <div class="form-group">
+                    <label>Provider Type</label>
+                    <select id="providerType">
+                        <option value="Center">Center / Day Camp / Preschool</option>
+                        <option value="Home">Type A/B Home / In-Home Aide</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Category (by County)</label>
+                    <select id="category">
+                        <option value="1">Category 1</option>
+                        <option value="2">Category 2</option>
+                        <option value="3">Category 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>SUTQ Quality Rating</label>
+                    <select id="rating">
+                        <option value="Base">Base (Not in SUTQ)</option>
+                        <option value="Bronze">Bronze (+10%)</option>
+                        <option value="Silver">Silver (+15%)</option>
+                        <option value="Gold">Gold (+25%)</option>
+                    </select>
+                </div>
+            </div>
+            <details style="margin-top: 16px;">
+                <summary style="cursor: pointer; color: #90a4ae; font-size: 0.85rem;">Which category is my county?</summary>
+                <div style="margin-top: 12px; font-size: 0.8rem;">
+                    <p style="margin-bottom: 8px;"><strong style="color: #4fc3f7;">Category 1:</strong> Brown, Fulton, Gallia, Hocking, Mercer, Muskingum, Paulding, Putnam, Ross, Van Wert, Vinton, Williams, Wyandot</p>
+                    <p style="margin-bottom: 8px;"><strong style="color: #4fc3f7;">Category 2:</strong> Adams, Allen, Ashland, Ashtabula, Carroll, Champaign, Clark, Clinton, Columbiana, Coshocton, Crawford, Darke, Erie, Fayette, Guernsey, Hardin, Henry, Highland, Huron, Jackson, Lawrence, Licking, Logan, Madison, Meigs, Miami, Perry, Pickaway, Pike, Preble, Richland, Sandusky, Scioto, Seneca, Shelby, Stark, Tuscarawas, Washington, Wayne</p>
+                    <p><strong style="color: #4fc3f7;">Category 3:</strong> Athens, Auglaize, Belmont, Butler, Clermont, Cuyahoga, Defiance, Delaware, Fairfield, Franklin, Geauga, Greene, Hamilton, Hancock, Harrison, Holmes, Jefferson, Knox, Lake, Lorain, Lucas, Mahoning, Marion, Medina, Monroe, Montgomery, Morgan, Morrow, Noble, Ottawa, Portage, Summit, Trumbull, Union, Warren, Wood</p>
+                </div>
+            </details>
+        </div>
+
+        <div class="card">
+            <h2><span class="step">2</span> Upload Payment Export</h2>
+            <div class="dropzone" id="dropzone">
+                <div class="dropzone-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" stroke-width="1.5">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="dropzone-text">
+                    <strong>Drop your CSV file here</strong><br>
+                    or click to browse
+                </div>
+            </div>
+            <input type="file" id="fileInput" accept=".csv">
+
+            <details style="margin-top: 20px;">
+                <summary style="cursor: pointer; color: #4fc3f7; font-size: 0.9rem; font-weight: 500;">How to export from KinderConnect</summary>
+                <div style="margin-top: 16px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                    <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 280px;">
+                            <div style="color: #4fc3f7; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem;">STEP 1: Navigate to Payments</div>
+                            <div style="background: rgba(255,255,255,0.05); border-radius: 6px; padding: 16px; font-size: 0.85rem; line-height: 1.6;">
+                                <p style="margin-bottom: 8px;">In KinderConnect, click on the <strong style="color: #fff;">Provider</strong> menu in the top navigation bar.</p>
+                                <p>Select <strong style="color: #fff;">Payments</strong> from the dropdown menu.</p>
+                            </div>
+                        </div>
+                        <div style="flex: 1; min-width: 280px;">
+                            <div style="color: #4fc3f7; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem;">STEP 2: Set Date Range</div>
+                            <div style="background: rgba(255,255,255,0.05); border-radius: 6px; padding: 16px; font-size: 0.85rem; line-height: 1.6;">
+                                <p style="margin-bottom: 8px;">Set your <strong style="color: #fff;">Start Date</strong> to November 2, 2025 (when the new rules took effect).</p>
+                                <p>Set <strong style="color: #fff;">End Date</strong> to today's date, then click <strong style="color: #fff;">Search</strong>.</p>
+                            </div>
+                        </div>
+                        <div style="flex: 1; min-width: 280px;">
+                            <div style="color: #4fc3f7; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem;">STEP 3: Export Details</div>
+                            <div style="background: rgba(255,255,255,0.05); border-radius: 6px; padding: 16px; font-size: 0.85rem; line-height: 1.6;">
+                                <p style="margin-bottom: 8px;">Click the <strong style="color: #fff;">checkbox in the header row</strong> to select all payment records.</p>
+                                <p>Click the <strong style="color: #fff;">Export Details</strong> button to download your CSV file.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div id="loading" class="card" style="display: none;">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Analyzing payment data...</p>
+            </div>
+        </div>
+
+        <div id="results" class="results-hidden">
+            <div class="card">
+                <h2>Results Summary</h2>
+
+                <div class="settings-display" id="settingsDisplay"></div>
+
+                <div class="explanation-box">
+                    <h4>What Changed in November 2025?</h4>
+                    <p>
+                        <strong>Old Rules:</strong> Part-Time = 8-24 hours, Full-Time = 24+ hours<br>
+                        <strong>New Rules:</strong> Part-Time = 10-33 hours, Full-Time = 33+ hours<br><br>
+                        Children with <strong>24-33 hours</strong> were moved from Full-Time rates to Part-Time rates.<br>
+                        Children with <strong>8-10 hours</strong> were moved from Part-Time rates to Hourly rates.
+                    </p>
+                </div>
+
+                <div class="summary-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalRecords">0</div>
+                        <div class="stat-label">Total Payment Records</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="uniqueChildren">0</div>
+                        <div class="stat-label">Unique Children</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalPayments">$0</div>
+                        <div class="stat-label">Total Payments Received</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value warning" id="affectedRecords">0</div>
+                        <div class="stat-label">Records Affected by Change</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value loss" id="totalLoss">$0</div>
+                        <div class="stat-label">Total Estimated Loss</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value loss" id="lossPercent">0%</div>
+                        <div class="stat-label">% of Payment Lost</div>
+                    </div>
+                </div>
+
+                <div class="week-summary" id="weekSummary"></div>
+
+                <div class="breakdown-section">
+                    <h3>Loss Breakdown by Bucket Change</h3>
+                    <div class="summary-grid">
+                        <div class="stat-card">
+                            <div class="stat-value loss" id="ftToPtLoss">$0</div>
+                            <div class="stat-label">Full-Time → Part-Time (24-33 hrs)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value loss" id="ptToHourlyLoss">$0</div>
+                            <div class="stat-label">Part-Time → Hourly (8-10 hrs)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="breakdown-section">
+                    <h3>If Ohio Had Enrollment-Based Payment</h3>
+                    <div class="explanation-box" style="background: rgba(239, 83, 80, 0.1); border-left-color: #ef5350;">
+                        <h4 style="color: #ef5350;">Enrollment-Based vs Attendance-Based Comparison</h4>
+                        <p>Under <strong>enrollment-based payment</strong>, providers are paid the Full-Time weekly rate for each enrolled child, regardless of actual hours attended. This is what federal CCDF regulations require (45 CFR §98.45(m)).</p>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="enrollmentBasedTotal">$0</div>
+                            <div class="stat-label">If Paid FT Rate (Enrollment-Based)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="actualTotal">$0</div>
+                            <div class="stat-label">Actually Received (Attendance-Based)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value loss" id="enrollmentLoss">$0</div>
+                            <div class="stat-label">Lost Due to Attendance-Based</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value loss" id="enrollmentLossPercent">0%</div>
+                            <div class="stat-label">% Lost vs Enrollment-Based</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="breakdown-section">
+                    <h3>Loss by Age Group</h3>
+                    <div id="ageGroupBreakdown"></div>
+                </div>
+
+                <div class="breakdown-section">
+                    <h3>Detailed Records (Affected Only)</h3>
+                    <div class="table-container">
+                        <table id="detailsTable">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Child</th>
+                                    <th>Hours</th>
+                                    <th>Paid</th>
+                                    <th>Age Group</th>
+                                    <th>Bucket Change</th>
+                                    <th>Should Have Paid</th>
+                                    <th>Loss</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn" onclick="downloadReport()">Download Full Report (CSV)</button>
+                    <button class="btn btn-secondary" onclick="downloadSummary()">Download Summary</button>
+                    <button class="btn btn-secondary" onclick="resetCalculator()">Start Over</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="privacy-note">
+            <strong>Your data stays private.</strong> All calculations happen in your browser. No data is uploaded to any server.
+        </div>
+    </div>
+
+    <script>
+// ============================================
+// RATE TABLES (from Ohio payment schedules)
+// ============================================
+const RATES = {
+    // Category 1 - Center
+    "Center1Base": {
+        "Infant": { FT: 195.00, PT: 144.00, Hourly: 10.40 },
+        "Toddler": { FT: 180.00, PT: 129.18, Hourly: 9.83 },
+        "Pre-School": { FT: 160.00, PT: 100.00, Hourly: 6.25 },
+        "School Age": { FT: 107.71, PT: 75.00, Hourly: 6.00 },
+        "School Age Summer": { FT: 155.00, PT: 107.21, Hourly: 7.49 }
+    },
+    "Center1Bronze": {
+        "Infant": { FT: 214.50, PT: 158.40, Hourly: 11.44 },
+        "Toddler": { FT: 198.00, PT: 142.10, Hourly: 10.81 },
+        "Pre-School": { FT: 176.00, PT: 110.00, Hourly: 6.88 },
+        "School Age": { FT: 118.48, PT: 82.50, Hourly: 6.60 },
+        "School Age Summer": { FT: 170.50, PT: 117.93, Hourly: 8.24 }
+    },
+    "Center1Silver": {
+        "Infant": { FT: 224.25, PT: 165.60, Hourly: 11.96 },
+        "Toddler": { FT: 207.00, PT: 148.56, Hourly: 11.30 },
+        "Pre-School": { FT: 184.00, PT: 115.00, Hourly: 7.19 },
+        "School Age": { FT: 123.87, PT: 86.25, Hourly: 6.90 },
+        "School Age Summer": { FT: 178.25, PT: 123.29, Hourly: 8.61 }
+    },
+    "Center1Gold": {
+        "Infant": { FT: 243.75, PT: 180.00, Hourly: 13.00 },
+        "Toddler": { FT: 225.00, PT: 161.48, Hourly: 12.29 },
+        "Pre-School": { FT: 200.00, PT: 125.00, Hourly: 7.81 },
+        "School Age": { FT: 134.64, PT: 93.75, Hourly: 7.50 },
+        "School Age Summer": { FT: 193.75, PT: 134.01, Hourly: 9.36 }
+    },
+    // Category 1 - Home
+    "Home1Base": {
+        "Infant": { FT: 170.20, PT: 105.63, Hourly: 6.00 },
+        "Toddler": { FT: 162.71, PT: 100.88, Hourly: 5.75 },
+        "Pre-School": { FT: 150.00, PT: 100.00, Hourly: 6.11 },
+        "School Age": { FT: 131.00, PT: 87.75, Hourly: 5.73 },
+        "School Age Summer": { FT: 142.52, PT: 100.00, Hourly: 6.50 }
+    },
+    "Home1Bronze": {
+        "Infant": { FT: 187.22, PT: 116.19, Hourly: 6.60 },
+        "Toddler": { FT: 178.98, PT: 110.97, Hourly: 6.33 },
+        "Pre-School": { FT: 165.00, PT: 110.00, Hourly: 6.72 },
+        "School Age": { FT: 144.10, PT: 96.53, Hourly: 6.30 },
+        "School Age Summer": { FT: 156.77, PT: 110.00, Hourly: 7.15 }
+    },
+    "Home1Silver": {
+        "Infant": { FT: 195.73, PT: 121.47, Hourly: 6.90 },
+        "Toddler": { FT: 187.12, PT: 116.01, Hourly: 6.61 },
+        "Pre-School": { FT: 172.50, PT: 115.00, Hourly: 7.03 },
+        "School Age": { FT: 150.65, PT: 100.91, Hourly: 6.59 },
+        "School Age Summer": { FT: 163.90, PT: 115.00, Hourly: 7.48 }
+    },
+    "Home1Gold": {
+        "Infant": { FT: 212.75, PT: 132.04, Hourly: 7.50 },
+        "Toddler": { FT: 203.39, PT: 126.10, Hourly: 7.19 },
+        "Pre-School": { FT: 187.50, PT: 125.00, Hourly: 7.64 },
+        "School Age": { FT: 163.75, PT: 109.69, Hourly: 7.16 },
+        "School Age Summer": { FT: 178.15, PT: 125.00, Hourly: 8.13 }
+    },
+    // Category 2 - Center
+    "Center2Base": {
+        "Infant": { FT: 246.65, PT: 175.00, Hourly: 10.21 },
+        "Toddler": { FT: 220.00, PT: 150.00, Hourly: 11.71 },
+        "Pre-School": { FT: 190.00, PT: 125.00, Hourly: 7.28 },
+        "School Age": { FT: 130.00, PT: 90.00, Hourly: 7.00 },
+        "School Age Summer": { FT: 177.45, PT: 125.00, Hourly: 7.83 }
+    },
+    "Center2Bronze": {
+        "Infant": { FT: 271.32, PT: 192.50, Hourly: 11.23 },
+        "Toddler": { FT: 242.00, PT: 165.00, Hourly: 12.88 },
+        "Pre-School": { FT: 209.00, PT: 137.50, Hourly: 8.01 },
+        "School Age": { FT: 143.00, PT: 99.00, Hourly: 7.70 },
+        "School Age Summer": { FT: 195.20, PT: 137.50, Hourly: 8.61 }
+    },
+    "Center2Silver": {
+        "Infant": { FT: 283.65, PT: 201.25, Hourly: 11.74 },
+        "Toddler": { FT: 253.00, PT: 172.50, Hourly: 13.47 },
+        "Pre-School": { FT: 218.50, PT: 143.75, Hourly: 8.37 },
+        "School Age": { FT: 149.50, PT: 103.50, Hourly: 8.05 },
+        "School Age Summer": { FT: 204.07, PT: 143.75, Hourly: 9.00 }
+    },
+    "Center2Gold": {
+        "Infant": { FT: 308.31, PT: 218.75, Hourly: 12.76 },
+        "Toddler": { FT: 275.00, PT: 187.50, Hourly: 14.64 },
+        "Pre-School": { FT: 237.50, PT: 156.25, Hourly: 9.10 },
+        "School Age": { FT: 162.50, PT: 112.50, Hourly: 8.75 },
+        "School Age Summer": { FT: 221.81, PT: 156.25, Hourly: 9.79 }
+    },
+    // Category 2 - Home
+    "Home2Base": {
+        "Infant": { FT: 200.00, PT: 135.00, Hourly: 10.00 },
+        "Toddler": { FT: 190.00, PT: 130.00, Hourly: 9.00 },
+        "Pre-School": { FT: 180.00, PT: 130.00, Hourly: 8.25 },
+        "School Age": { FT: 160.00, PT: 110.00, Hourly: 8.50 },
+        "School Age Summer": { FT: 175.00, PT: 122.56, Hourly: 8.50 }
+    },
+    "Home2Bronze": {
+        "Infant": { FT: 220.00, PT: 148.50, Hourly: 11.00 },
+        "Toddler": { FT: 209.00, PT: 143.00, Hourly: 9.90 },
+        "Pre-School": { FT: 198.00, PT: 143.00, Hourly: 9.08 },
+        "School Age": { FT: 176.00, PT: 121.00, Hourly: 9.35 },
+        "School Age Summer": { FT: 192.50, PT: 134.82, Hourly: 9.35 }
+    },
+    "Home2Silver": {
+        "Infant": { FT: 230.00, PT: 155.25, Hourly: 11.50 },
+        "Toddler": { FT: 218.50, PT: 149.50, Hourly: 10.35 },
+        "Pre-School": { FT: 207.00, PT: 149.50, Hourly: 9.49 },
+        "School Age": { FT: 184.00, PT: 126.50, Hourly: 9.78 },
+        "School Age Summer": { FT: 201.25, PT: 140.94, Hourly: 9.78 }
+    },
+    "Home2Gold": {
+        "Infant": { FT: 250.00, PT: 168.75, Hourly: 12.50 },
+        "Toddler": { FT: 237.50, PT: 162.50, Hourly: 11.25 },
+        "Pre-School": { FT: 225.00, PT: 162.50, Hourly: 10.31 },
+        "School Age": { FT: 200.00, PT: 137.50, Hourly: 10.63 },
+        "School Age Summer": { FT: 218.75, PT: 153.20, Hourly: 10.63 }
+    },
+    // Category 3 - Center
+    "Center3Base": {
+        "Infant": { FT: 325.00, PT: 220.69, Hourly: 13.00 },
+        "Toddler": { FT: 292.15, PT: 200.00, Hourly: 13.00 },
+        "Pre-School": { FT: 258.00, PT: 170.00, Hourly: 10.00 },
+        "School Age": { FT: 165.00, PT: 110.00, Hourly: 10.00 },
+        "School Age Summer": { FT: 235.00, PT: 160.00, Hourly: 10.50 }
+    },
+    "Center3Bronze": {
+        "Infant": { FT: 357.50, PT: 242.76, Hourly: 14.30 },
+        "Toddler": { FT: 321.37, PT: 220.00, Hourly: 14.30 },
+        "Pre-School": { FT: 283.80, PT: 187.00, Hourly: 11.00 },
+        "School Age": { FT: 181.50, PT: 121.00, Hourly: 11.00 },
+        "School Age Summer": { FT: 258.50, PT: 176.00, Hourly: 11.55 }
+    },
+    "Center3Silver": {
+        "Infant": { FT: 373.75, PT: 253.79, Hourly: 14.95 },
+        "Toddler": { FT: 335.97, PT: 230.00, Hourly: 14.95 },
+        "Pre-School": { FT: 296.70, PT: 195.50, Hourly: 11.50 },
+        "School Age": { FT: 189.75, PT: 126.50, Hourly: 11.50 },
+        "School Age Summer": { FT: 270.25, PT: 184.00, Hourly: 12.08 }
+    },
+    "Center3Gold": {
+        "Infant": { FT: 406.25, PT: 275.86, Hourly: 16.25 },
+        "Toddler": { FT: 365.19, PT: 250.00, Hourly: 16.25 },
+        "Pre-School": { FT: 322.50, PT: 212.50, Hourly: 12.50 },
+        "School Age": { FT: 206.25, PT: 137.50, Hourly: 12.50 },
+        "School Age Summer": { FT: 293.75, PT: 200.00, Hourly: 13.13 }
+    },
+    // Category 3 - Home
+    "Home3Base": {
+        "Infant": { FT: 225.00, PT: 165.00, Hourly: 10.00 },
+        "Toddler": { FT: 215.00, PT: 152.46, Hourly: 10.00 },
+        "Pre-School": { FT: 200.00, PT: 150.00, Hourly: 10.00 },
+        "School Age": { FT: 175.00, PT: 125.00, Hourly: 10.00 },
+        "School Age Summer": { FT: 187.07, PT: 138.00, Hourly: 10.00 }
+    },
+    "Home3Bronze": {
+        "Infant": { FT: 247.50, PT: 181.50, Hourly: 11.00 },
+        "Toddler": { FT: 236.50, PT: 167.71, Hourly: 11.00 },
+        "Pre-School": { FT: 220.00, PT: 165.00, Hourly: 11.00 },
+        "School Age": { FT: 192.50, PT: 137.50, Hourly: 11.00 },
+        "School Age Summer": { FT: 205.78, PT: 151.80, Hourly: 11.00 }
+    },
+    "Home3Silver": {
+        "Infant": { FT: 258.75, PT: 189.75, Hourly: 11.50 },
+        "Toddler": { FT: 247.25, PT: 175.33, Hourly: 11.50 },
+        "Pre-School": { FT: 230.00, PT: 172.50, Hourly: 11.50 },
+        "School Age": { FT: 201.25, PT: 143.75, Hourly: 11.50 },
+        "School Age Summer": { FT: 215.13, PT: 158.70, Hourly: 11.50 }
+    },
+    "Home3Gold": {
+        "Infant": { FT: 281.25, PT: 206.25, Hourly: 12.50 },
+        "Toddler": { FT: 268.75, PT: 190.58, Hourly: 12.50 },
+        "Pre-School": { FT: 250.00, PT: 187.50, Hourly: 12.50 },
+        "School Age": { FT: 218.75, PT: 156.25, Hourly: 12.50 },
+        "School Age Summer": { FT: 233.84, PT: 172.50, Hourly: 12.50 }
+    }
+};
+
+const AGE_GROUPS = ["Infant", "Toddler", "Pre-School", "School Age", "School Age Summer"];
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+function parseHours(hoursStr) {
+    if (!hoursStr) return 0;
+    // Handle formats like ="13:56" or "13:56" or just numbers
+    let cleaned = hoursStr.toString().replace(/[="']/g, '').trim();
+    if (cleaned.includes(':')) {
+        const [hours, minutes] = cleaned.split(':').map(Number);
+        return hours + (minutes / 60);
+    }
+    return parseFloat(cleaned) || 0;
+}
+
+function parseMoney(moneyStr) {
+    if (!moneyStr) return 0;
+    return parseFloat(moneyStr.toString().replace(/[$,]/g, '')) || 0;
+}
+
+function formatMoney(amount) {
+    return '$' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch {
+        return dateStr;
+    }
+}
+
+function getOldBucket(hours) {
+    if (hours < 8) return 'Hourly';
+    if (hours < 24) return 'PT';
+    return 'FT';
+}
+
+function getNewBucket(hours) {
+    if (hours < 10) return 'Hourly';
+    if (hours < 33) return 'PT';
+    return 'FT';
+}
+
+function getRateKey(providerType, category, rating) {
+    return `${providerType}${category}${rating}`;
+}
+
+function detectAgeGroup(totalPayment, hours, currentBucket, rateTable) {
+    // Try to match the payment to a rate in the table
+    let bestMatch = null;
+    let smallestDiff = Infinity;
+
+    for (const ageGroup of AGE_GROUPS) {
+        const rates = rateTable[ageGroup];
+        if (!rates) continue;
+
+        let expectedPayment;
+        if (currentBucket === 'Hourly') {
+            expectedPayment = rates.Hourly * hours;
+        } else if (currentBucket === 'PT') {
+            expectedPayment = rates.PT;
+        } else {
+            expectedPayment = rates.FT;
+        }
+
+        // Calculate ratio to handle partial weeks
+        const ratio = totalPayment / expectedPayment;
+
+        // If ratio is between 0.1 and 1.1, it's a potential match
+        if (ratio >= 0.1 && ratio <= 1.1) {
+            const diff = Math.abs(1 - ratio);
+            if (diff < smallestDiff) {
+                smallestDiff = diff;
+                bestMatch = { ageGroup, ratio, confidence: 1 - diff };
+            }
+        }
+    }
+
+    return bestMatch;
+}
+
+function calculateLoss(hours, ageGroup, ratio, rateTable) {
+    const oldBucket = getOldBucket(hours);
+    const newBucket = getNewBucket(hours);
+
+    if (oldBucket === newBucket) {
+        return { loss: 0, change: null };
+    }
+
+    const rates = rateTable[ageGroup];
+    if (!rates) return { loss: 0, change: null };
+
+    let oldRate, newRate;
+
+    if (oldBucket === 'FT' && newBucket === 'PT') {
+        oldRate = rates.FT;
+        newRate = rates.PT;
+    } else if (oldBucket === 'PT' && newBucket === 'Hourly') {
+        oldRate = rates.PT;
+        newRate = rates.Hourly * hours;
+    } else {
+        return { loss: 0, change: null };
+    }
+
+    // Apply the ratio (for partial weeks)
+    const shouldHavePaid = oldRate * ratio;
+    const actuallyPaid = newRate * ratio;
+    const loss = shouldHavePaid - actuallyPaid;
+
+    return {
+        loss: Math.max(0, loss),
+        change: `${oldBucket}→${newBucket}`,
+        shouldHavePaid,
+        oldRate,
+        newRate
+    };
+}
+
+// ============================================
+// CSV PARSING
+// ============================================
+function parseCSV(text) {
+    const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length < 2) return [];
+
+    // Parse header
+    const headerLine = lines[0];
+    const headers = parseCSVLine(headerLine);
+
+    // Find column indices
+    const colMap = {};
+    headers.forEach((h, i) => {
+        const clean = h.toLowerCase().replace(/[^a-z]/g, '');
+        if (clean.includes('periodstart')) colMap.periodStart = i;
+        else if (clean.includes('periodend')) colMap.periodEnd = i;
+        else if (clean.includes('childname') || clean === 'childname') colMap.childName = i;
+        else if (clean === 'amount') colMap.amount = i;
+        else if (clean.includes('copay') || clean === 'copay') colMap.copay = i;
+        else if (clean.includes('paidhours') || clean === 'paidhours') colMap.paidHours = i;
+        else if (clean.includes('familyname') || clean === 'familyname') colMap.familyName = i;
+    });
+
+    // Parse data rows
+    const records = [];
+    for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]);
+        if (values.length < 5) continue;
+
+        records.push({
+            periodStart: values[colMap.periodStart] || '',
+            periodEnd: values[colMap.periodEnd] || '',
+            childName: values[colMap.childName] || '',
+            familyName: values[colMap.familyName] || '',
+            amount: parseMoney(values[colMap.amount]),
+            copay: parseMoney(values[colMap.copay]),
+            paidHours: parseHours(values[colMap.paidHours])
+        });
+    }
+
+    return records;
+}
+
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    result.push(current.trim());
+    return result;
+}
+
+// ============================================
+// MAIN ANALYSIS
+// ============================================
+function analyzeData(records) {
+    const providerType = document.getElementById('providerType').value;
+    const category = document.getElementById('category').value;
+    const rating = document.getElementById('rating').value;
+
+    const rateKey = getRateKey(providerType, category, rating);
+    const rateTable = RATES[rateKey];
+
+    if (!rateTable) {
+        alert('Rate table not found for your selection');
+        return null;
+    }
+
+    const results = [];
+    const uniqueChildren = new Set();
+    const weeklyData = {};
+    const ageGroupLosses = {};
+    let totalLoss = 0;
+    let totalPayments = 0;
+    let enrollmentBasedTotal = 0;
+    let ftToPtLoss = 0;
+    let ptToHourlyLoss = 0;
+    let affectedCount = 0;
+
+    AGE_GROUPS.forEach(ag => ageGroupLosses[ag] = { loss: 0, count: 0 });
+
+    for (const record of records) {
+        if (record.paidHours <= 0) continue;
+
+        uniqueChildren.add(record.childName);
+
+        const totalPayment = record.amount + record.copay;
+        totalPayments += totalPayment;
+        const currentBucket = getNewBucket(record.paidHours);
+        const oldBucket = getOldBucket(record.paidHours);
+
+        // Detect age group from payment
+        const ageMatch = detectAgeGroup(totalPayment, record.paidHours, currentBucket, rateTable);
+
+        // Calculate enrollment-based payment (what they'd get if paid FT rate)
+        let enrollmentBasedPayment = totalPayment; // default if can't detect
+        if (ageMatch && rateTable[ageMatch.ageGroup]) {
+            // FT rate * ratio (to handle partial weeks proportionally)
+            enrollmentBasedPayment = rateTable[ageMatch.ageGroup].FT * ageMatch.ratio;
+        }
+        enrollmentBasedTotal += enrollmentBasedPayment;
+
+        // Calculate loss from hour bucket change
+        let lossInfo = { loss: 0, change: null };
+        if (ageMatch && oldBucket !== currentBucket) {
+            lossInfo = calculateLoss(record.paidHours, ageMatch.ageGroup, ageMatch.ratio, rateTable);
+        }
+
+        const resultRecord = {
+            ...record,
+            totalPayment,
+            currentBucket,
+            oldBucket,
+            ageGroup: ageMatch?.ageGroup || 'Unknown',
+            ageGroupConfidence: ageMatch?.confidence || 0,
+            ratio: ageMatch?.ratio || 1,
+            bucketChange: lossInfo.change,
+            loss: lossInfo.loss,
+            shouldHavePaid: lossInfo.shouldHavePaid || totalPayment,
+            enrollmentBasedPayment
+        };
+
+        results.push(resultRecord);
+
+        if (lossInfo.loss > 0) {
+            totalLoss += lossInfo.loss;
+            affectedCount++;
+
+            if (lossInfo.change === 'FT→PT') ftToPtLoss += lossInfo.loss;
+            if (lossInfo.change === 'PT→Hourly') ptToHourlyLoss += lossInfo.loss;
+
+            if (ageMatch) {
+                ageGroupLosses[ageMatch.ageGroup].loss += lossInfo.loss;
+                ageGroupLosses[ageMatch.ageGroup].count++;
+            }
+        }
+
+        // Track weekly data
+        const weekKey = `${record.periodStart}-${record.periodEnd}`;
+        if (!weeklyData[weekKey]) {
+            weeklyData[weekKey] = { start: record.periodStart, end: record.periodEnd, loss: 0, count: 0 };
+        }
+        weeklyData[weekKey].loss += lossInfo.loss;
+        if (lossInfo.loss > 0) weeklyData[weekKey].count++;
+    }
+
+    const enrollmentLoss = enrollmentBasedTotal - totalPayments;
+    const enrollmentLossPercent = enrollmentBasedTotal > 0 ? (enrollmentLoss / enrollmentBasedTotal * 100) : 0;
+
+    return {
+        records: results,
+        summary: {
+            totalRecords: results.length,
+            uniqueChildren: uniqueChildren.size,
+            affectedCount,
+            totalLoss,
+            totalPayments,
+            lossPercent: totalPayments > 0 ? (totalLoss / totalPayments * 100) : 0,
+            enrollmentBasedTotal,
+            enrollmentLoss,
+            enrollmentLossPercent,
+            ftToPtLoss,
+            ptToHourlyLoss,
+            ageGroupLosses,
+            weeklyData,
+            settings: { providerType, category, rating }
+        }
+    };
+}
+
+// ============================================
+// UI RENDERING
+// ============================================
+function renderResults(analysis) {
+    const { records, summary } = analysis;
+
+    // Settings display
+    document.getElementById('settingsDisplay').innerHTML = `
+        <div class="setting-item"><strong>Provider:</strong> ${summary.settings.providerType}</div>
+        <div class="setting-item"><strong>Category:</strong> ${summary.settings.category}</div>
+        <div class="setting-item"><strong>Rating:</strong> ${summary.settings.rating}</div>
+    `;
+
+    // Summary stats
+    document.getElementById('totalRecords').textContent = summary.totalRecords;
+    document.getElementById('uniqueChildren').textContent = summary.uniqueChildren;
+    document.getElementById('totalPayments').textContent = formatMoney(summary.totalPayments);
+    document.getElementById('affectedRecords').textContent = summary.affectedCount;
+    document.getElementById('totalLoss').textContent = formatMoney(summary.totalLoss);
+    document.getElementById('lossPercent').textContent = summary.lossPercent.toFixed(1) + '%';
+    document.getElementById('ftToPtLoss').textContent = formatMoney(summary.ftToPtLoss);
+    document.getElementById('ptToHourlyLoss').textContent = formatMoney(summary.ptToHourlyLoss);
+
+    // Enrollment-based comparison
+    document.getElementById('enrollmentBasedTotal').textContent = formatMoney(summary.enrollmentBasedTotal);
+    document.getElementById('actualTotal').textContent = formatMoney(summary.totalPayments);
+    document.getElementById('enrollmentLoss').textContent = formatMoney(summary.enrollmentLoss);
+    document.getElementById('enrollmentLossPercent').textContent = summary.enrollmentLossPercent.toFixed(1) + '%';
+
+    // Weekly summary
+    const weeks = Object.values(summary.weeklyData).sort((a, b) => new Date(a.start) - new Date(b.start));
+    const weekHtml = weeks.length > 0 ? `
+        <strong>Analysis Period:</strong> ${formatDate(weeks[0].start)} - ${formatDate(weeks[weeks.length-1].end)}
+        (${weeks.length} week${weeks.length > 1 ? 's' : ''})
+    ` : '';
+    document.getElementById('weekSummary').innerHTML = weekHtml;
+
+    // Age group breakdown
+    const ageGroupHtml = AGE_GROUPS.map(ag => {
+        const data = summary.ageGroupLosses[ag];
+        if (data.count === 0) return '';
+        return `
+            <div class="stat-card" style="display: inline-block; margin-right: 12px; margin-bottom: 12px;">
+                <div class="stat-value loss" style="font-size: 1.5rem;">${formatMoney(data.loss)}</div>
+                <div class="stat-label">${ag} (${data.count} records)</div>
+            </div>
+        `;
+    }).join('');
+    document.getElementById('ageGroupBreakdown').innerHTML = ageGroupHtml || '<p style="color: #90a4ae;">No losses detected by age group</p>';
+
+    // Detailed table (affected records only)
+    const affectedRecords = records.filter(r => r.loss > 0);
+    const tableHtml = affectedRecords.map(r => `
+        <tr>
+            <td class="period-dates">${formatDate(r.periodStart)} - ${formatDate(r.periodEnd)}</td>
+            <td>${r.childName}</td>
+            <td>${r.paidHours.toFixed(1)} hrs</td>
+            <td>${formatMoney(r.totalPayment)}</td>
+            <td><span class="age-group-tag ${r.ageGroup === 'Unknown' ? 'unmatched-tag' : ''}">${r.ageGroup}</span></td>
+            <td><span class="bucket-change">${r.bucketChange}</span></td>
+            <td>${formatMoney(r.shouldHavePaid)}</td>
+            <td class="loss-cell">${formatMoney(r.loss)}</td>
+        </tr>
+    `).join('');
+    document.getElementById('detailsBody').innerHTML = tableHtml || '<tr><td colspan="8" style="text-align: center; color: #66bb6a;">No records affected by bucket changes</td></tr>';
+
+    // Show results
+    document.getElementById('results').classList.remove('results-hidden');
+    document.getElementById('loading').style.display = 'none';
+
+    // Store for download
+    window.analysisResults = analysis;
+}
+
+function downloadReport() {
+    if (!window.analysisResults) return;
+
+    const { records, summary } = window.analysisResults;
+
+    let csv = 'Period Start,Period End,Child Name,Family Name,Paid Hours,Amount,Co-pay,Total Payment,Age Group (Detected),Old Bucket,New Bucket,Bucket Change,Should Have Paid,Loss\n';
+
+    for (const r of records) {
+        csv += `"${r.periodStart}","${r.periodEnd}","${r.childName}","${r.familyName}",${r.paidHours.toFixed(2)},${r.amount.toFixed(2)},${r.copay.toFixed(2)},${r.totalPayment.toFixed(2)},"${r.ageGroup}","${r.oldBucket}","${r.currentBucket}","${r.bucketChange || 'No Change'}",${r.shouldHavePaid.toFixed(2)},${r.loss.toFixed(2)}\n`;
+    }
+
+    downloadFile(csv, 'childcare_loss_report.csv', 'text/csv');
+}
+
+function downloadSummary() {
+    if (!window.analysisResults) return;
+
+    const { summary } = window.analysisResults;
+
+    let text = `OHIO CHILDCARE LOSS CALCULATOR - SUMMARY REPORT
+Generated: ${new Date().toLocaleString()}
+
+CENTER SETTINGS
+===============
+Provider Type: ${summary.settings.providerType}
+Category: ${summary.settings.category}
+SUTQ Rating: ${summary.settings.rating}
+
+SUMMARY
+=======
+Total Payment Records Analyzed: ${summary.totalRecords}
+Unique Children: ${summary.uniqueChildren}
+Total Payments Received: ${formatMoney(summary.totalPayments)}
+Records Affected by Bucket Change: ${summary.affectedCount}
+
+TOTAL ESTIMATED LOSS: ${formatMoney(summary.totalLoss)}
+PERCENTAGE OF PAYMENTS LOST: ${summary.lossPercent.toFixed(1)}%
+
+BREAKDOWN BY CHANGE TYPE
+========================
+Full-Time → Part-Time (24-33 hrs): ${formatMoney(summary.ftToPtLoss)}
+Part-Time → Hourly (8-10 hrs): ${formatMoney(summary.ptToHourlyLoss)}
+
+ENROLLMENT-BASED PAYMENT COMPARISON
+===================================
+If Ohio used enrollment-based payment (FT rate for all enrolled children):
+  Would have received: ${formatMoney(summary.enrollmentBasedTotal)}
+  Actually received:   ${formatMoney(summary.totalPayments)}
+  LOSS DUE TO ATTENDANCE-BASED: ${formatMoney(summary.enrollmentLoss)} (${summary.enrollmentLossPercent.toFixed(1)}%)
+
+BREAKDOWN BY AGE GROUP
+======================
+`;
+
+    for (const ag of AGE_GROUPS) {
+        const data = summary.ageGroupLosses[ag];
+        if (data.count > 0) {
+            text += `${ag}: ${formatMoney(data.loss)} (${data.count} records)\n`;
+        }
+    }
+
+    text += `
+METHODOLOGY
+===========
+This calculator compares payments under the NEW hour bucket rules (effective November 2025)
+against what would have been paid under the OLD rules:
+
+OLD RULES: Hourly (<8 hrs), Part-Time (8-24 hrs), Full-Time (24+ hrs)
+NEW RULES: Hourly (<10 hrs), Part-Time (10-33 hrs), Full-Time (33+ hrs)
+
+Age groups are detected by matching payment amounts to the applicable rate table.
+Partial week payments are handled proportionally.
+
+This report is for informational purposes. Verify calculations independently before use.
+`;
+
+    downloadFile(text, 'childcare_loss_summary.txt', 'text/plain');
+}
+
+function downloadFile(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function resetCalculator() {
+    document.getElementById('results').classList.add('results-hidden');
+    document.getElementById('fileInput').value = '';
+    window.analysisResults = null;
+}
+
+// ============================================
+// FILE HANDLING
+// ============================================
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dropzone.addEventListener('click', () => fileInput.click());
+
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+});
+
+dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+});
+
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+});
+
+fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) processFile(file);
+});
+
+function processFile(file) {
+    if (!file.name.endsWith('.csv')) {
+        alert('Please upload a CSV file');
+        return;
+    }
+
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('results').classList.add('results-hidden');
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const records = parseCSV(e.target.result);
+            if (records.length === 0) {
+                alert('No valid records found in the file');
+                document.getElementById('loading').style.display = 'none';
+                return;
+            }
+
+            const analysis = analyzeData(records);
+            if (analysis) {
+                renderResults(analysis);
+            }
+        } catch (err) {
+            alert('Error processing file: ' + err.message);
+            document.getElementById('loading').style.display = 'none';
+        }
+    };
+    reader.readAsText(file);
+}
+    </script>
+</body>
+</html>
